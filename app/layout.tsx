@@ -2,8 +2,7 @@
 
 import { Geist, Geist_Mono } from "next/font/google";
 import { useEffect, useState } from "react";
-import { useAppStore } from "@/stores/app-store";
-import { BottomNav } from "@/components/bottom-nav";
+import dynamic from "next/dynamic";
 import "@/lib/i18n";
 import "./globals.css";
 
@@ -17,35 +16,18 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Dynamically import components that use client-side data
+const BottomNav = dynamic(() => import("@/components/bottom-nav").then(mod => mod.BottomNav), {
+  ssr: false,
+});
+
 function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAppStore();
-  const { theme } = user.preferences;
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    const root = document.documentElement;
-    
-    if (theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const updateTheme = () => {
-        if (mediaQuery.matches) {
-          root.classList.add('dark');
-        } else {
-          root.classList.remove('dark');
-        }
-      };
-      updateTheme();
-      mediaQuery.addEventListener('change', updateTheme);
-      return () => mediaQuery.removeEventListener('change', updateTheme);
-    } else if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-  }, [theme]);
+  }, []);
 
-  // Prevent hydration mismatch by not rendering until mounted
   if (!mounted) {
     return (
       <div className="max-w-md mx-auto min-h-screen bg-gray-50 relative pb-20">
@@ -66,6 +48,7 @@ export default function RootLayout({
     <html lang="zh" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-slate-900`}
+        suppressHydrationWarning
       >
         <ThemeProvider>
           <div className="max-w-md mx-auto min-h-screen bg-gray-50 dark:bg-slate-900 relative pb-20">
