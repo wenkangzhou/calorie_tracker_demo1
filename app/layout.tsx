@@ -1,7 +1,7 @@
 'use client';
 
 import { Geist, Geist_Mono } from "next/font/google";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAppStore } from "@/stores/app-store";
 import { BottomNav } from "@/components/bottom-nav";
 import "@/lib/i18n";
@@ -20,8 +20,10 @@ const geistMono = Geist_Mono({
 function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAppStore();
   const { theme } = user.preferences;
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const root = document.documentElement;
     
     if (theme === 'system') {
@@ -42,6 +44,15 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.classList.remove('dark');
     }
   }, [theme]);
+
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return (
+      <div className="max-w-md mx-auto min-h-screen bg-gray-50 relative pb-20">
+        {children}
+      </div>
+    );
+  }
 
   return <>{children}</>;
 }
