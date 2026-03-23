@@ -10,7 +10,7 @@ import { useAppStore } from '@/stores/app-store';
 import { CircularProgress } from '@/components/circular-progress';
 import { MacroCard } from '@/components/macro-card';
 import { MealSection } from '@/components/meal-section';
-import { MealType } from '@/types';
+import { MealType, MealEntry } from '@/types';
 import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
@@ -23,7 +23,11 @@ export default function DashboardPage() {
   const [displayDate, setDisplayDate] = useState('');
   const [isToday, setIsToday] = useState(false);
   const [greeting, setGreeting] = useState('');
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<{
+    totalCalories: number;
+    macros: { carbs: number; protein: number; fat: number };
+    meals: Record<MealType, MealEntry[]>;
+  }>({
     totalCalories: 0,
     macros: { carbs: 0, protein: 0, fat: 0 },
     meals: { breakfast: [], lunch: [], dinner: [], snack: [] }
