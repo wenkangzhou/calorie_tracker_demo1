@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, User } from 'lucide-react';
 import { format, addDays, subDays } from 'date-fns';
@@ -10,50 +10,26 @@ import { useAppStore } from '@/stores/app-store';
 import { CircularProgress } from '@/components/circular-progress';
 import { MacroCard } from '@/components/macro-card';
 import { MealSection } from '@/components/meal-section';
-import { MealType, MealEntry } from '@/types';
+import { MealType } from '@/types';
 import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const { user, selectedDate, setSelectedDate, getDailyStats, removeMealEntry } = useAppStore();
-  const [mounted, setMounted] = useState(false);
   
-  // Client-side only state
-  const [displayDate, setDisplayDate] = useState('');
-  const [isToday, setIsToday] = useState(false);
-  const [greeting, setGreeting] = useState('');
-  const [stats, setStats] = useState<{
-    totalCalories: number;
-    macros: { carbs: number; protein: number; fat: number };
-    meals: Record<MealType, MealEntry[]>;
-  }>({
-    totalCalories: 0,
-    macros: { carbs: 0, protein: 0, fat: 0 },
-    meals: { breakfast: [], lunch: [], dinner: [], snack: [] }
-  });
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    setIsClient(true);
     i18n.changeLanguage(user.preferences.language);
-    
-    // Calculate date display on client only
-    const dateLocale = user.preferences.language === 'zh' ? zhCN : enUS;
-    setDisplayDate(format(new Date(selectedDate), 'MM月dd日', { locale: dateLocale }));
-    setIsToday(selectedDate === format(new Date(), 'yyyy-MM-dd'));
-    
-    // Calculate greeting on client only
-    const hour = new Date().getHours();
-    if (hour < 12) setGreeting(t('dashboard.greeting'));
-    else if (hour < 18) setGreeting(t('dashboard.greetingAfternoon'));
-    else setGreeting(t('dashboard.greetingEvening'));
-    
-    // Get stats
-    setStats(getDailyStats());
-  }, [i18n, user.preferences.language, selectedDate, t, getDailyStats]);
+  }, [i18n, user.preferences.language]);
 
+  // Get stats directly from store
+  const stats = getDailyStats();
   const { totalCalories, macros, meals } = stats;
   const { dailyCalorieGoal, macroGoals } = user;
+
   const remaining = Math.max(dailyCalorieGoal - totalCalories, 0);
 
   const handlePrevDay = () => {
@@ -70,15 +46,29 @@ export default function DashboardPage() {
     router.push('/search');
   };
 
-  // Loading state to prevent hydration mismatch
-  if (!mounted) {
+  const getGreeting = () => {
+    if (!isClient) return '';
+    const hour = new Date().getHours();
+    if (hour < 12) return t('dashboard.greeting');
+    if (hour < 18) return t('dashboard.greetingAfternoon');
+    return t('dashboard.greetingEvening');
+  };
+
+  const getDisplayDate = () => {
+    if (!isClient) return '';
+    const dateLocale = user.preferences.language === 'zh' ? zhCN : enUS;
+    return format(new Date(selectedDate), 'MM月dd日', { locale: dateLocale });
+  };
+
+  const checkIsToday = () => {
+    if (!isClient) return false;
+    return selectedDate === format(new Date(), 'yyyy-MM-dd');
+  };
+
+  if (!isClient) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="animate-pulse">
-          <div className="h-24 bg-gray-200 m-4 rounded-xl"></div>
-          <div className="h-64 bg-gray-200 m-4 rounded-xl"></div>
-          <div className="h-32 bg-gray-200 m-4 rounded-xl"></div>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
       </div>
     );
   }
@@ -94,7 +84,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {greeting}
+                {getGreeting()}
               </p>
               <h1 className="font-semibold text-gray-900 dark:text-white">
                 {user.name}
@@ -112,8 +102,8 @@ export default function DashboardPage() {
             <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[100px] text-center">
-            {displayDate}
-            {isToday && (
+            {getDisplayDate()}
+            {checkIsToday() && (
               <span className="ml-2 text-xs text-green-600 dark:text-green-400">
                 {user.preferences.language === 'zh' ? '今天' : 'Today'}
               </span>
