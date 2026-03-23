@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "name": "calorie-tracker",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "nextjs",
+  "rewrites": [
+    { "source": "/food/:id", "destination": "/food/:id.html" },
+    { "source": "/search", "destination": "/search.html" },
+    { "source": "/progress", "destination": "/progress.html" },
+    { "source": "/profile", "destination": "/profile.html" }
+  ]
+}
